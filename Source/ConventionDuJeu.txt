@@ -1,0 +1,18 @@
+
+Ici, se trouve les règles que l'on va appliquer 
+dans nos différents programmes pour qu'il n'y ait pas de conflit.
+
+Le joueur portant le numéro 0 commence toujours la partie.
+Il se positionnera à la case (0,0) au début de la partie.
+Le joueur portant le numéro 1 est le second joueur.
+Il se positionnera à la case (7,7) au début de la partie.
+
+On retient une position grace à un tuple x,y.
+
+
+Ici, se trouve les règles encore en attente, demandant une confirmation par la suite.
+
+Le retour d'un joueur (pour jouer un tour) est
+- un énumérable (return GAUCHE ... retourne la valeur 1)
+ou
+- le déplacement en x et y (return (1,0) ... augmente x de 1 et ne déplace pas le y)
