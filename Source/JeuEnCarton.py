@@ -9,6 +9,11 @@ Celle-ci ne respecte pas les conventions mis en accord précédement
 """
 #  import IAExpExpV1
 
+"""
+
+colorama : pour permettre d'avoir des couleurs
+"""
+
 from random import random
 
 class IARandom : 
@@ -23,7 +28,7 @@ class IARandom :
     def joueExploration(self,environnement):
         listeLibre = list()
         listePersonnelle = list()
-        listeCasePossible = self.casesVoisines(environnement)
+        listeCasePossible = self.casesVoisinesValides(environnement)
         for cellule in listeCasePossible :
             if environnement.appartient(cellule,self.numero):
                 listePersonnelle.append(cellule)
@@ -35,10 +40,19 @@ class IARandom :
             caseDestination = listePersonnelle[(int)(random()*len(listePersonnelle))]
         return self.deplacement(environnement.joueurs[self.numero],caseDestination)
     #voisine à la position et ne sortant pas ou appartenant à l'adversaire    
-    def casesVoisines(self,environnement):
+    """
+    def casesVoisines(self,case):
         nouvelleListe = [(environnement.joueurs[self.numero][0]-1,environnement.joueurs[self.numero][1]),(environnement.joueurs[self.numero][0]+1,environnement.joueurs[self.numero][1]),(environnement.joueurs[self.numero][0],environnement.joueurs[self.numero][1]-1),(environnement.joueurs[self.numero][0],environnement.joueurs[self.numero][1]+1)]
         
         nouvelleListe = list(filter(lambda cellule :cellule[0]>=0 and cellule[1]>=0 and cellule[0]<8 and cellule[1]<8,nouvelleListe))
+        return nouvelleListe
+    def caseVoisinesValides(self,environnement):
+        nouvelleListe=environnement.casesVoisines(environnement,environnement.joueurs[self.numero])
+        nouvelleListe = list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),nouvelleListe))
+        return nouvelleListe
+    """
+    def casesVoisinesValides(self,environnement):
+        nouvelleListe=environnement.casesVoisines(environnement.joueurs[self.numero])
         nouvelleListe = list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),nouvelleListe))
         return nouvelleListe
     
@@ -53,9 +67,10 @@ class IARandom :
 
 class PlateauCarton :
     def __init__(self):
+        #self.taille = 8
         self.tableau=dict()
-        for x in range(0,8,1):
-            for y in range(0,8,1):
+        for x in range(8):
+            for y in range(8):
                 self.tableau[(x,y)]=-8
         self.joueurs=dict();
         self.joueurs[0]=(0,0)
@@ -73,16 +88,54 @@ class PlateauCarton :
         # maintenant, mouvement(1,0) permet de faire bouger le joueur 0 vers le bas.
         #Puis on 'colorie' la case pour le joueur
         self.tableau[self.joueurs[numero]]=numero
+        #On vérifie si on a pas bloquer des cases...
+        
+        #Voir la documentation (pour le moment : une feuille de Jérome)
+        caseEnFace = self.joueurs[numero][0]+self.listeMouvement[deplacement][0] , self.joueurs[numero][1]+self.listeMouvement[deplacement][1]
+        caseCote1 = self.joueurs[numero][0]+self.listeMouvement[(deplacement+1)%4][0] , self.joueurs[numero][1]+self.listeMouvement[(deplacement+1)%4][1]
+        caseCote2 = self.joueurs[numero][0]+self.listeMouvement[(deplacement+3)%4][0] , self.joueurs[numero][1]+self.listeMouvement[(deplacement+3)%4][1]
+        if (not self.libreRemplissage(caseEnFace,numero)):
+            if(self.libreRemplissage(caseCote1,numero) and self.libreRemplissage(caseCote2,numero)):
+                self.remplissage([caseCote1,caseCote2],numero)
+        else:
+            remplissageUtile=False
+            listeATester = list()
+            caseCote1a = caseCote1[0]+self.listeMouvement[deplacement][0] , caseCote1[1]+self.listeMouvement[deplacement][1]
+            caseCote2a = caseCote2[0]+self.listeMouvement[deplacement][0] , caseCote2[1]+self.listeMouvement[deplacement][1]
+            if(self.libreRemplissage(caseCote1,numero) and not self.libreRemplissage(caseCote1a,numero)):
+                remplissageUtile = True
+                listeATester = listeATester+[caseCote1]
+            if(self.libreRemplissage(caseCote2,numero) and not self.libreRemplissage(caseCote2a,numero)):
+                remplissageUtile = True
+                listeATester = listeATester+[caseCote2]
+            if remplissageUtile :
+                self.remplissage(listeATester+[caseEnFace],numero)
+
+        
+    #renvoie true si n'appartient pas à ce joueur et est dans le tableau
+    def libreRemplissage(self,case,numJoueur):
+        return (case[0]>=0 and case[1]>=0 and case[0]<8 and case[1]<8 and (not self.appartient(case,numJoueur)))
+        
+    def casesVoisines(self,case):
+        nouvelleListe = [(case[0]-1,case[1]),(case[0]+1,case[1]),(case[0],case[1]-1),(case[0],case[1]+1)]
+        
+        nouvelleListe = list(filter(lambda cellule :cellule[0]>=0 and cellule[1]>=0 and cellule[0]<8 and cellule[1]<8,nouvelleListe))
+        return nouvelleListe
     def dessinePlateau(self):
-        for y in range(0,8,1):
+        for y in range(8):
             resultat=""
-            for x in range(0,8,1):
+            for x in range(8):
                 if self.tableau[(x,y)]>=0:
-                    resultat +=" "
+                    if self.joueurs[0]==(x,y) or self.joueurs[1]==(x,y):
+                        resultat +="J"
+                    else:
+                        resultat +=" "
                 resultat +=str(self.tableau[(x,y)])
             print(resultat)
     #renvoie un tuple
-    def nb_appartient_general(self):
+    
+    #idée : changer en obtenir_score
+    def obtenir_score(self):
         nb0=0
         nb1=0
         for valeur in self.tableau.values():
@@ -91,8 +144,44 @@ class PlateauCarton :
             elif(valeur==1):
                 nb1 +=1
         return (nb0,nb1)
+    
+    def testRemplissageRecursif(self,ensembleCaseAValide,ensembleCaseValide,numJoueur):
+        if not ensembleCaseAValide :
+            return True,list(ensembleCaseValide)
+        else :
+            # trie tableau par distance grace au min
+            # pas élégant et plutot complexe 
             
-        
+            nouvellesCases = self.casesVoisines(min(ensembleCaseAValide)[1])
+            ensembleCaseValide = ensembleCaseValide | set([min(ensembleCaseAValide)])
+            ensembleCaseAValide= ensembleCaseAValide-set([min(ensembleCaseAValide)])
+            
+            for nouvCase in nouvellesCases:
+                nouvellesCasesDist =self.distanceMana(nouvCase,self.joueurs[(numJoueur+1)%2])
+                if not( self.appartient(nouvCase,numJoueur) or set([(nouvellesCasesDist,nouvCase)])<= (ensembleCaseAValide|ensembleCaseValide) ):
+                    # sinon :on n'enregistre pas cette case !
+                    if(self.appartient(nouvCase,(numJoueur+1)%2)):
+                        return False,list( (ensembleCaseAValide|ensembleCaseValide) )
+                    ensembleCaseAValide = set([(nouvellesCasesDist,nouvCase)])|ensembleCaseAValide
+            return self.testRemplissageRecursif(ensembleCaseAValide,ensembleCaseValide,numJoueur)
+            
+    #fonction  qui rempli les cases coincées
+    # à partir de d'une liste de case mis en argument (celles dans la liste)
+    # numJoueur concerne le joueur qui bloque potentiellement la case.
+    #idée :  faire la grosse partie en récursif!
+    def remplissage(self,listeCase,numJoueur):
+        for case in listeCase:
+            listeAtester=[(self.distanceMana(case,self.joueurs[(numJoueur+1)%2]),case)]
+            
+            estCoince,listeCoince = self.testRemplissageRecursif(set(listeAtester),set(),numJoueur)
+            if (estCoince):
+                for caseCoince in listeCoince:
+                    self.tableau[caseCoince[1]]=numJoueur
+                
+
+    def distanceMana(self,caseA,caseB):
+        return abs(caseA[0]-caseB[0])+abs(caseA[1]-caseB[1])
+     
     
 class JeuEnCarton :
     def __init__(self):
@@ -114,12 +203,16 @@ class JeuEnCarton :
             #♠On visualise la situation
             self.environnement.dessinePlateau()
             print(numTour)
-        scores = self.environnement.nb_appartient_general()
+        scores = self.environnement.obtenir_score()
         print( str(scores[0])+" et "+str(scores[1]))
         # reste à faire : le remplissage des cases quand elles sont entourées
         
         
-            
+#jeuTest = JeuEnCarton()
+#jeuTest.debutPartie50()
+        
+#jeuTest.environnement.dessinePlateau()
+#jeuTest.environnement.mouvement(0,0)
         
     
 """
