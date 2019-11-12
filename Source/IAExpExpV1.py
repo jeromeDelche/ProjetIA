@@ -14,18 +14,18 @@ from random import random
 
 # nom : eploration, exploitation, Version 1
 class IAExpExpV1 :
-    def __init__(self,position_x,position_y,numero):
-        # dépent de la classe joueur
-        self.position = position_x,position_y
+    def __init__(self,numero):
         # On suppose que il y ait le numéro 1 et 0
-        self.numero = numero
-        # dépent de la classe joueur        
+        self.numero = numero 
         self.epsilon_greedy = 1
+        #`documents à stocker !
         self.ListeSituationEvalue = None
+        # retient les derniers mouvements effectués (clé : num du tour)
         self.dernieresSituations = dict()
         # Note, à 0.002 : on arrive à un epsilon_greedy de 20% qu'au bout de 800 parties
+        #• à 0.001 : on arrive à epsi-greedy de 20% au bout de 1600 parties
         self.tauxVersExploitation = 0.002
-        self.learning_rate = 0.1
+        self.learning_rate = 0.2
         # Se remettra à 1 après chaque fin de partie
         self.num_tour = 1
         
@@ -34,25 +34,25 @@ class IAExpExpV1 :
         joueEntrainement (avec apprentissage)
         joueSerieusement (uniquement en exploitation)
         """
-    def joueEntrainement(environnement) :
+    def joueEntrainement(self,environnement) :
         if random() < self.epsilon_greedy : 
-            choix=joueExploration(environnement)
+            choix=self.joueExploration(environnement)
         else:
-            choix=joueExploitation(environnement)
-        self.dernieresSituations[num_tour]=(environnement.situation)
-        num_tour += 1
+            choix=self.joueExploitation(environnement)
+        self.dernieresSituations[self.num_tour]=(environnement.situation())
+        self.num_tour += 1
         return choix
             
-    def joueSerieusement(environnement) :
-        choix=joueExploitation(environnement)
+    def joueSerieusement(self,environnement) :
+        choix=self.joueExploitation(environnement)
         return choix
         
-    def joueExploration(environnement):
+    def joueExploration(self,environnement):
         listeLibre = list()
         listePersonnelle = list()
-        listeCasePossible = casesVoisines()
+        listeCasePossible = self.casesVoisinesValides(environnement)
         for cellule in listeCasePossible :
-            if environnement.appartient(cellule,numero):
+            if environnement.appartient(cellule,self.numero):
                 listePersonnelle.append(cellule)
             elif environnement.estLibre(cellule):
                 listeLibre.append(cellule)
@@ -60,38 +60,40 @@ class IAExpExpV1 :
             caseDestination = listeLibre[(int)(random()*len(listeLibre))]
         else :
             caseDestination = listePersonnelle[(int)(random()*len(listePersonnelle))]
-        return deplacement(position,caseDestination)
+        return self.deplacement(environnement.joueurs[self.numero],caseDestination)
 
     
-    def joueExploitation(environnement):
+    def joueExploitation(self,environnement):
         # A continuer
+        print("")
         
-    def deplacement(caseDepart,caseDestination):
-        deltaX = caseDestination[0]-caseDepart[0]
-        deltaY = caseDestination[1]-caseDepart[1]
-        if(deltaX == 0):
-            if(deltaY > 0):
-                return "uparrow"
-            return "downarrow"
-        if(deltaX > 0):
-            return "rightarrow"
-        return "leftarrow"
         
-    def fin_partie(environnement):
+    #voisine à la position et ne sortant pas ou appartenant à l'adversaire    
+    def casesVoisinesValides(self,environnement):
+        nouvelleListe=environnement.casesVoisines(environnement.joueurs[self.numero])
+        nouvelleListe = list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),nouvelleListe))
+        return nouvelleListe
+        
+    def deplacement(self,caseDepart,caseDestination):
+        if (caseDepart[0]==caseDestination[0]):
+            if (caseDestination[1]>caseDepart[1]):
+                return 1 # vers le bas
+            return 3 # vers le haut
+        if (caseDestination[0]>caseDepart[0]):
+            return 0 # vers la droite
+        return 2 # vers la gauche
+        
+    #Une fois la partie fini, le jeu (classe jeu) envoie cette fonction à l'IA
+    def fin_partie(self,environnement):
         # La récompense n'est attribuée qu'à la fin et ne compte que la différence des cases
-        score = environnement.nb_appartient(numero)-environnement.nb_appartient(numero+1%2)
+        scores = environnement.obtenir_score()
+        recompense= scores[self.numero]-scores[(self.numero+1)%2]
         #L'exploration se fait dans 20% des cas minimum ... On peut le changer
         self.epsilon_greedy= max(self.epsilon_greedy*(1-self.tauxVersExploitation), 0.2)
         # evaluer les différentes états par les quelles on est passé
-        evaluationFinPartie(score)
+        self.evaluationFinPartie(recompense)
         # A faire : enregistre la partie et les différents mouvements
         
-    def evaluationFinPartie(score) : 
-        
-    #voisine à la position et ne sortant pas ou appartenant à l'adversaire    
-    def casesVoisines():
-        nouvelleListe = [(position[0]-1,position[1]),(position[0]+1,position[1]),(position[0],position[1]-1),(position[0],position[1]+1)]
-        # Contient une erreur !!!
-        nouvelleListe = list(filter((lambda cellule :cellule[0]>=0 and cellule[1]>=0 and cellule[0]<8 and cellule[1]<8,nouvelleListe))
-        nouvelleListe = list(filter((lambda cellule : environnement.appartient(cellule,(numero+1)%2),nouvelleListe))
-        return nouvelleListe
+    def evaluationFinPartie(self,score) : 
+        # A continuer
+        print("")

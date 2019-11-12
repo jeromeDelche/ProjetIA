@@ -14,10 +14,19 @@ Celle-ci ne respecte pas les conventions mis en accord précédement
 colorama : pour permettre d'avoir des couleurs
 """
 
+import time
 from random import random
 
+def decoTemps(fonction):
+    def nouvelleFonction(*args,**key_args):
+        debut=time.time()
+        fonction(*args,**key_args)
+        fin=time.time()
+        print(str(fin-debut)+" secondes")
+    return nouvelleFonction
+
 class IARandom : 
-    def __init__(self,position_x,position_y,numero):
+    def __init__(self,numero):
         #self.position = position_x,position_y
         # position inutile puisqu'elle se trouvera dans environnement
         
@@ -39,18 +48,9 @@ class IARandom :
         else :
             caseDestination = listePersonnelle[(int)(random()*len(listePersonnelle))]
         return self.deplacement(environnement.joueurs[self.numero],caseDestination)
+    
+    
     #voisine à la position et ne sortant pas ou appartenant à l'adversaire    
-    """
-    def casesVoisines(self,case):
-        nouvelleListe = [(environnement.joueurs[self.numero][0]-1,environnement.joueurs[self.numero][1]),(environnement.joueurs[self.numero][0]+1,environnement.joueurs[self.numero][1]),(environnement.joueurs[self.numero][0],environnement.joueurs[self.numero][1]-1),(environnement.joueurs[self.numero][0],environnement.joueurs[self.numero][1]+1)]
-        
-        nouvelleListe = list(filter(lambda cellule :cellule[0]>=0 and cellule[1]>=0 and cellule[0]<8 and cellule[1]<8,nouvelleListe))
-        return nouvelleListe
-    def caseVoisinesValides(self,environnement):
-        nouvelleListe=environnement.casesVoisines(environnement,environnement.joueurs[self.numero])
-        nouvelleListe = list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),nouvelleListe))
-        return nouvelleListe
-    """
     def casesVoisinesValides(self,environnement):
         nouvelleListe=environnement.casesVoisines(environnement.joueurs[self.numero])
         nouvelleListe = list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),nouvelleListe))
@@ -66,17 +66,17 @@ class IARandom :
         return 2 # vers la gauche
 
 class PlateauCarton :
-    def __init__(self):
-        #self.taille = 8
+    def __init__(self,taille):
+        self.taille = taille
         self.tableau=dict()
-        for x in range(8):
-            for y in range(8):
+        for x in range(self.taille):
+            for y in range(self.taille):
                 self.tableau[(x,y)]=-8
         self.joueurs=dict();
         self.joueurs[0]=(0,0)
         self.tableau[(0,0)]=0
-        self.joueurs[1]=(7,7)
-        self.tableau[(7,7)]=1
+        self.joueurs[1]=(self.taille-1,self.taille-1)
+        self.tableau[(self.taille-1,self.taille-1)]=1
         self.listeMouvement= [(1,0),(0,1),(-1,0),(0,-1)]
     
     def appartient(self,cellule,numero):
@@ -114,17 +114,17 @@ class PlateauCarton :
         
     #renvoie true si n'appartient pas à ce joueur et est dans le tableau
     def libreRemplissage(self,case,numJoueur):
-        return (case[0]>=0 and case[1]>=0 and case[0]<8 and case[1]<8 and (not self.appartient(case,numJoueur)))
+        return (case[0]>=0 and case[1]>=0 and case[0]<self.taille and case[1]<self.taille and (not self.appartient(case,numJoueur)))
         
     def casesVoisines(self,case):
         nouvelleListe = [(case[0]-1,case[1]),(case[0]+1,case[1]),(case[0],case[1]-1),(case[0],case[1]+1)]
         
-        nouvelleListe = list(filter(lambda cellule :cellule[0]>=0 and cellule[1]>=0 and cellule[0]<8 and cellule[1]<8,nouvelleListe))
+        nouvelleListe = list(filter(lambda cellule :cellule[0]>=0 and cellule[1]>=0 and cellule[0]<self.taille and cellule[1]<self.taille,nouvelleListe))
         return nouvelleListe
     def dessinePlateau(self):
-        for y in range(8):
+        for y in range(self.taille):
             resultat=""
-            for x in range(8):
+            for x in range(self.taille):
                 if self.tableau[(x,y)]>=0:
                     if self.joueurs[0]==(x,y) or self.joueurs[1]==(x,y):
                         resultat +="J"
@@ -132,9 +132,9 @@ class PlateauCarton :
                         resultat +=" "
                 resultat +=str(self.tableau[(x,y)])
             print(resultat)
-    #renvoie un tuple
     
-    #idée : changer en obtenir_score
+    
+    #renvoie un tuple : (score du premier , score du second)
     def obtenir_score(self):
         nb0=0
         nb1=0
@@ -144,6 +144,10 @@ class PlateauCarton :
             elif(valeur==1):
                 nb1 +=1
         return (nb0,nb1)
+    
+    def jeuFini(self):
+        score0,score1 = self.obtenir_score()
+        return (score0+score1)>= self.taille*self.taille
     
     def testRemplissageRecursif(self,ensembleCaseAValide,ensembleCaseValide,numJoueur):
         if not ensembleCaseAValide :
@@ -181,13 +185,16 @@ class PlateauCarton :
 
     def distanceMana(self,caseA,caseB):
         return abs(caseA[0]-caseB[0])+abs(caseA[1]-caseB[1])
+    
+    def situation(self):
+        return (self.tableau,self.joueurs)
      
     
 class JeuEnCarton :
-    def __init__(self):
-        self.environnement=PlateauCarton()
-        self.joueur0 =IARandom(0,0,0)
-        self.joueur1 =IARandom(7,7,1)
+    def __init__(self,longeurPlateau):
+        self.environnement=PlateauCarton(longeurPlateau)
+        self.joueur0 =IARandom(0)
+        self.joueur1 =IARandom(1)
         # self.numTour = 1
     #joueur0.joueExploration(environnement)
     
@@ -200,19 +207,56 @@ class JeuEnCarton :
             #joueur 1 choisit son action
             deplacement = self.joueur1.joueExploration(self.environnement)
             self.environnement.mouvement(deplacement,1)
-            #♠On visualise la situation
-            self.environnement.dessinePlateau()
+            #On visualise la situation
             print(numTour)
-        scores = self.environnement.obtenir_score()
-        print( str(scores[0])+" et "+str(scores[1]))
-        # reste à faire : le remplissage des cases quand elles sont entourées
+            self.environnement.dessinePlateau()
+        score0,score1 = self.environnement.obtenir_score()
+        print( str(score0)+" et "+str(score1))
         
+    def debutPartieNormal(self):
+        numTour=1
+        while (not self.environnement.jeuFini() ):
+            #joueur 0 choisit son action
+            deplacement = self.joueur0.joueExploration(self.environnement)
+            self.environnement.mouvement(deplacement,0)
+            if(not self.environnement.jeuFini()):
+                #joueur 1 choisit son action
+                deplacement = self.joueur1.joueExploration(self.environnement)
+                self.environnement.mouvement(deplacement,1)
+            # print("Tour " + str(numTour))
+            #± self.environnement.dessinePlateau()
+            numTour +=1
+        print("Nombres de tours : " + str(numTour))
+        self.environnement.dessinePlateau()
+        score0,score1 = self.environnement.obtenir_score()
+        print( str(score0)+" et "+str(score1))
+            
         
-#jeuTest = JeuEnCarton()
+"""        
+if __name__ == "__main__" :
+    
+    @decoTemps
+    def testJeu():
+        for i in range(2000):
+            jeuTest = JeuEnCarton(8)
+            jeuTest.debutPartieNormal()
+            
+    testJeu()
+"""
+#jeuTest = JeuEnCarton(8)
 #jeuTest.debutPartie50()
+#jeuTest.debutPartieNormal()
         
 #jeuTest.environnement.dessinePlateau()
 #jeuTest.environnement.mouvement(0,0)
+#jeuTest.environnement.mouvement(1,0)
+        
+"""
+for i in range(10):
+    jeuTest = JeuEnCarton(8)
+    jeuTest.debutPartieNormal()
+
+"""        
         
     
 """
