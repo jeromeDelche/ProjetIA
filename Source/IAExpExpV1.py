@@ -25,7 +25,7 @@ class IAExpExpV1 :
         # Note, à 0.002 : on arrive à un epsilon_greedy de 20% qu'au bout de 800 parties
         #• à 0.001 : on arrive à epsi-greedy de 20% au bout de 1600 parties
         self.tauxVersExploitation = 0.002
-        self.learning_rate = 0.2
+        self.learning_rate = 0.25
         # Se remettra à 1 après chaque fin de partie
         self.num_tour = 1
         
@@ -39,7 +39,8 @@ class IAExpExpV1 :
             choix=self.joueExploration(environnement)
         else:
             choix=self.joueExploitation(environnement)
-        self.dernieresSituations[self.num_tour]=(environnement.situation())
+        # enregistre la situation avant que le choix ne soit fait.
+        self.dernieresSituations[self.num_tour-1]=(environnement.situation())
         self.num_tour += 1
         return choix
             
@@ -50,8 +51,8 @@ class IAExpExpV1 :
     def joueExploration(self,environnement):
         listeLibre = list()
         listePersonnelle = list()
-        listeCasePossible = self.casesVoisinesValides(environnement)
-        for cellule in listeCasePossible :
+        listeCasesPossibles = self.casesVoisinesValides(environnement)
+        for cellule in listeCasesPossibles :
             if environnement.appartient(cellule,self.numero):
                 listePersonnelle.append(cellule)
             elif environnement.estLibre(cellule):
@@ -64,8 +65,29 @@ class IAExpExpV1 :
 
     
     def joueExploitation(self,environnement):
-        # A continuer
-        print("")
+        # A continuer : valeurDEtat
+        listeCasesPossibles = self.casesVoisinesValides(environnement)
+        situationActuelle = environnement.situation()
+        valeurMax = -100
+        for caseMouvement in listeCasesPossibles :
+            #On deplace le joueur dans cette situation
+            nouvellePositionJoueur = situationActuelle[1]
+            nouvellePositionJoueur[self.numero]=caseMouvement 
+            #On colorie la case
+            nouveauPlateau = situationActuelle[0]
+            nouveauPlateau[caseMouvement]=self.numero
+            # A faire: rechercher la valeur dans la BD
+            valeurSituation=0
+            #valeurSituation = self.valeurDEtat((nouveauPlateau,nouvellePositionJoueur))
+            if(self.numero==0): # on essaye alors de maximiser
+                if(valeurSituation>valeurMax):
+                    valeurMax=valeurSituation
+                    caseOptimal = caseMouvement
+            else: # on essaye de minimiser
+                if((-valeurSituation)>valeurMax):
+                    valeurMax=(-valeurSituation)
+                    caseOptimal = caseMouvement
+        return self.deplacement(environnement.joueurs[self.numero],caseOptimal)
         
         
     #voisine à la position et ne sortant pas ou appartenant à l'adversaire    
@@ -92,8 +114,24 @@ class IAExpExpV1 :
         self.epsilon_greedy= max(self.epsilon_greedy*(1-self.tauxVersExploitation), 0.2)
         # evaluer les différentes états par les quelles on est passé
         self.evaluationFinPartie(recompense)
-        # A faire : enregistre la partie et les différents mouvements
+        #A faire: Enregistre la partie et les différents mouvements
+        
         
     def evaluationFinPartie(self,score) : 
-        # A continuer
-        print("")
+        # A continuer: miseAJourEtat
+        
+        #Modification du score pour cet état
+        #Note : puisque les joueurs sont obligé de jouer à chaque tour,
+        #  une situation ne peut corespondre qu'au debut d'un seul joueur
+        #  via une preuve "par damier" en utilisant la récursivité.
+        if(self.numero==0):
+            deltaScore=score
+        else:
+            deltaScore=-score
+        
+        #Si il y a eu 3 tours, num_tour=4 et indice maximum=2 
+        indiceSituation= self.num_tour-2
+        while indiceSituation >=0 :
+            #self.miseAJourEtat(self.dernieresSituations[indiceSituation],deltaScore)
+            deltaScore = deltaScore*self.learning_rate
+            indiceSituation -=1    

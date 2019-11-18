@@ -213,6 +213,7 @@ class JeuEnCarton :
         score0,score1 = self.environnement.obtenir_score()
         print( str(score0)+" et "+str(score1))
         
+    @decoTemps
     def debutPartieNormal(self):
         numTour=1
         while (not self.environnement.jeuFini() ):
@@ -223,8 +224,8 @@ class JeuEnCarton :
                 #joueur 1 choisit son action
                 deplacement = self.joueur1.joueExploration(self.environnement)
                 self.environnement.mouvement(deplacement,1)
-            # print("Tour " + str(numTour))
-            #± self.environnement.dessinePlateau()
+                #print("Tour " + str(numTour))
+                #self.environnement.dessinePlateau()
             numTour +=1
         print("Nombres de tours : " + str(numTour))
         self.environnement.dessinePlateau()
