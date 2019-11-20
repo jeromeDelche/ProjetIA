@@ -34,7 +34,7 @@ class IARandom :
         self.numero = numero
         
     #IARandom jouera toujours en exploration sans retenir ses coups.
-    def joueExploration(self,environnement):
+    def joueSerieusement(self,environnement):
         listeLibre = list()
         listePersonnelle = list()
         listeCasePossible = self.casesVoisinesValides(environnement)
@@ -69,14 +69,10 @@ class PlateauCarton :
     def __init__(self,taille):
         self.taille = taille
         self.tableau=dict()
-        for x in range(self.taille):
-            for y in range(self.taille):
-                self.tableau[(x,y)]=-8
-        self.joueurs=dict();
-        self.joueurs[0]=(0,0)
-        self.tableau[(0,0)]=0
-        self.joueurs[1]=(self.taille-1,self.taille-1)
-        self.tableau[(self.taille-1,self.taille-1)]=1
+        self.joueurs=dict()
+        #mets à 0 tout le tableau : initialisation!
+        self.nettoyePlateau()
+
         self.listeMouvement= [(1,0),(0,1),(-1,0),(0,-1)]
     
     def appartient(self,cellule,numero):
@@ -189,6 +185,20 @@ class PlateauCarton :
     def situation(self):
         return (self.tableau,self.joueurs)
      
+    # Remet à 0 le plateau pour recommencer une partie
+    def nettoyePlateau(self):
+        for x in range(self.taille):
+            for y in range(self.taille):
+                self.tableau[(x,y)]=-8
+        self.joueurs[0]=(0,0)
+        self.tableau[(0,0)]=0
+        self.joueurs[1]=(self.taille-1,self.taille-1)
+        self.tableau[(self.taille-1,self.taille-1)]=1
+    
+    def deplacementValide(self,deplacement,numero):
+        caseDestination = self.joueurs[numero][0]+self.listeMouvement[deplacement][0] , self.joueurs[numero][1]+self.listeMouvement[deplacement][1]  
+        return caseDestination in list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),self.casesVoisines(environnement.joueurs[self.numero])))
+        list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),nouvelleListe))
     
 class JeuEnCarton :
     def __init__(self,longeurPlateau):
@@ -198,14 +208,15 @@ class JeuEnCarton :
         # self.numTour = 1
     #joueur0.joueExploration(environnement)
     
+    
     #fait une partie ou les joueurs joueront exactement 50 fois chaqu'un
     def debutPartie50(self):
         for numTour in range(0,50,1):
             #joueur 0 choisit son action
-            deplacement = self.joueur0.joueExploration(self.environnement)
+            deplacement = self.joueur0.joueSerieusement(self.environnement)
             self.environnement.mouvement(deplacement,0)
             #joueur 1 choisit son action
-            deplacement = self.joueur1.joueExploration(self.environnement)
+            deplacement = self.joueur1.joueSerieusement(self.environnement)
             self.environnement.mouvement(deplacement,1)
             #On visualise la situation
             print(numTour)
@@ -215,19 +226,56 @@ class JeuEnCarton :
         
     @decoTemps
     def debutPartieNormal(self):
+        self.environnement.nettoyePlateau()
         numTour=1
         while (not self.environnement.jeuFini() ):
             #joueur 0 choisit son action
-            deplacement = self.joueur0.joueExploration(self.environnement)
+            deplacement = self.joueur0.joueSerieusement(self.environnement)
             self.environnement.mouvement(deplacement,0)
             if(not self.environnement.jeuFini()):
                 #joueur 1 choisit son action
-                deplacement = self.joueur1.joueExploration(self.environnement)
+                deplacement = self.joueur1.joueSerieusement(self.environnement)
                 self.environnement.mouvement(deplacement,1)
                 #print("Tour " + str(numTour))
                 #self.environnement.dessinePlateau()
             numTour +=1
         print("Nombres de tours : " + str(numTour))
+        self.environnement.dessinePlateau()
+        score0,score1 = self.environnement.obtenir_score()
+        print( str(score0)+" et "+str(score1))
+            
+        
+class JeuEnBois :
+    def __init__(self,longeurPlateau):
+        self.environnement=PlateauCarton(longeurPlateau)
+        self.joueurs = dict()
+        self.joueurs[0] =IARandom(0)
+        self.joueurs[1] =IARandom(1)
+        # self.numTour = 1
+        
+    @decoTemps
+    def debutPartieNormal(self):
+        self.environnement.nettoyePlateau()
+        numDemiTour=0
+        numJoueurActuel =0
+        while (not self.environnement.jeuFini() ):
+            deplacement = self.joueurs[numJoueurActuel].joueSerieusement(self.environnement)
+            while( not self.environnement.deplacementValide(deplacement,numJoueurActuel)):
+                #Plus tard : envoyer une exception !
+                print("Ce mouvement est incorrect : veuillez en choisir un autre")
+                deplacement = self.joueurs[numJoueurActuel].joueSerieusement(self.environnement)
+            #joueur 0 choisit son action
+            deplacement = self.joueur0.joueSerieusement(self.environnement)
+            self.environnement.mouvement(deplacement,0)
+            if(not self.environnement.jeuFini()):
+                #joueur 1 choisit son action
+                deplacement = self.joueur1.joueSerieusement(self.environnement)
+                self.environnement.mouvement(deplacement,1)
+                #print("Tour " + str(numTour))
+                #self.environnement.dessinePlateau()
+            numDemiTour +=1
+            numJoueurActuel = (numJoueurActuel+1)%2
+        print("Nombres de tours : " + str(numDemiTour-1))
         self.environnement.dessinePlateau()
         score0,score1 = self.environnement.obtenir_score()
         print( str(score0)+" et "+str(score1))

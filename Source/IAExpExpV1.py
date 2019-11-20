@@ -120,18 +120,25 @@ class IAExpExpV1 :
     def evaluationFinPartie(self,score) : 
         # A continuer: miseAJourEtat
         
+        #Si il y a eu 3 tours, num_tour=4 et indice maximum=2 
+        indiceSituation= self.num_tour-2
+        
         #Modification du score pour cet état
         #Note : puisque les joueurs sont obligé de jouer à chaque tour,
         #  une situation ne peut corespondre qu'au debut d'un seul joueur
         #  via une preuve "par damier" en utilisant la récursivité.
+        scorePrecedant=0
         if(self.numero==0):
-            deltaScore=score
+            #self.miseAJourEtat(self.dernieresSituations[indiceSituation],score)
+            scorePrecedant=score
         else:
-            deltaScore=-score
+            #self.miseAJourEtat(self.dernieresSituations[indiceSituation],-score)
+            scorePrecedant=-score
         
-        #Si il y a eu 3 tours, num_tour=4 et indice maximum=2 
-        indiceSituation= self.num_tour-2
-        while indiceSituation >=0 :
-            #self.miseAJourEtat(self.dernieresSituations[indiceSituation],deltaScore)
-            deltaScore = deltaScore*self.learning_rate
-            indiceSituation -=1    
+        while indiceSituation >0 :
+            indiceSituation -=1 
+            # ancienneValeur = self.valeurDEtat(self.dernieresSituations[indiceSituation])
+            nouvelleValeur = ancienneValeur + self.learning_rate*(scorePrecedant-ancienneValeur)
+            #self.miseAJourEtat(self.dernieresSituations[indiceSituation],nouvelleValeur)
+            scorePrecedant= nouvelleValeur
+               
