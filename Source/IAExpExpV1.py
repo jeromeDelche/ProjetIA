@@ -23,7 +23,7 @@ class IAExpExpV1 :
         # retient les derniers mouvements effectués (clé : num du tour)
         self.dernieresSituations = dict()
         # Note, à 0.002 : on arrive à un epsilon_greedy de 20% qu'au bout de 800 parties
-        #• à 0.001 : on arrive à epsi-greedy de 20% au bout de 1600 parties
+        # à 0.001 : on arrive à epsi-greedy de 20% au bout de 1600 parties
         self.tauxVersExploitation = 0.002
         self.learning_rate = 0.25
         # Se remettra à 1 après chaque fin de partie

@@ -197,8 +197,8 @@ class PlateauCarton :
     
     def deplacementValide(self,deplacement,numero):
         caseDestination = self.joueurs[numero][0]+self.listeMouvement[deplacement][0] , self.joueurs[numero][1]+self.listeMouvement[deplacement][1]  
-        return caseDestination in list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),self.casesVoisines(environnement.joueurs[self.numero])))
-        list(filter(lambda cellule : not(environnement.appartient(cellule,(self.numero+1)%2)),nouvelleListe))
+        return caseDestination in list(filter(lambda cellule : not(self.appartient(cellule,(numero+1)%2)),self.casesVoisines(self.joueurs[numero])))
+
     
 class JeuEnCarton :
     def __init__(self,longeurPlateau):
@@ -259,20 +259,15 @@ class JeuEnBois :
         numDemiTour=0
         numJoueurActuel =0
         while (not self.environnement.jeuFini() ):
+            # print("Au tour du joueur ",numJoueurActuel)
             deplacement = self.joueurs[numJoueurActuel].joueSerieusement(self.environnement)
             while( not self.environnement.deplacementValide(deplacement,numJoueurActuel)):
                 #Plus tard : envoyer une exception !
                 print("Ce mouvement est incorrect : veuillez en choisir un autre")
                 deplacement = self.joueurs[numJoueurActuel].joueSerieusement(self.environnement)
-            #joueur 0 choisit son action
-            deplacement = self.joueur0.joueSerieusement(self.environnement)
-            self.environnement.mouvement(deplacement,0)
-            if(not self.environnement.jeuFini()):
-                #joueur 1 choisit son action
-                deplacement = self.joueur1.joueSerieusement(self.environnement)
-                self.environnement.mouvement(deplacement,1)
-                #print("Tour " + str(numTour))
-                #self.environnement.dessinePlateau()
+                
+            self.environnement.mouvement(deplacement,numJoueurActuel)
+            
             numDemiTour +=1
             numJoueurActuel = (numJoueurActuel+1)%2
         print("Nombres de tours : " + str(numDemiTour-1))
