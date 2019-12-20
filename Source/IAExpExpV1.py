@@ -10,7 +10,11 @@ Celle ci fonctionne à partir d'une évolution Exploration/Exploitation
 et évaluera les situations à partir d'une fonction d'évaluation
 """
 
+import os.path
+from os import path
+import json
 from random import random
+# import pickle
 
 # nom : eploration, exploitation, Version 1
 class IAExpExpV1 :
@@ -24,10 +28,11 @@ class IAExpExpV1 :
         self.dernieresSituations = dict()
         # Note, à 0.002 : on arrive à un epsilon_greedy de 20% qu'au bout de 800 parties
         # à 0.001 : on arrive à epsi-greedy de 20% au bout de 1600 parties
-        self.tauxVersExploitation = 0.002
+        self.tauxVersExploitation = 0.001
         self.learning_rate = 0.25
         # Se remettra à 1 après chaque fin de partie
         self.num_tour = 1
+        self.nomFichier = "./fichierSauvegardeEtat8.txt"
         
         """
         pour lui demander de jouer, il y a deux versions : 
@@ -68,7 +73,9 @@ class IAExpExpV1 :
         # A continuer : valeurDEtat
         listeCasesPossibles = self.casesVoisinesValides(environnement)
         situationActuelle = environnement.situation()
+        # les valeurs seront comprise entre -64 et 64
         valeurMax = -100
+        # On simule les différents cas possible
         for caseMouvement in listeCasesPossibles :
             #On deplace le joueur dans cette situation
             nouvellePositionJoueur = situationActuelle[1]
@@ -76,9 +83,8 @@ class IAExpExpV1 :
             #On colorie la case
             nouveauPlateau = situationActuelle[0]
             nouveauPlateau[caseMouvement]=self.numero
-            # A faire: rechercher la valeur dans la BD
-            valeurSituation=0
-            #valeurSituation = self.valeurDEtat((nouveauPlateau,nouvellePositionJoueur))
+            # Rechercher la valeur dans la BD
+            valeurSituation = self.valeurDEtatTotale((nouveauPlateau,nouvellePositionJoueur))
             if(self.numero==0): # on essaye alors de maximiser
                 if(valeurSituation>valeurMax):
                     valeurMax=valeurSituation
@@ -118,7 +124,6 @@ class IAExpExpV1 :
         
         
     def evaluationFinPartie(self,score) : 
-        # A continuer: miseAJourEtat
         
         #Si il y a eu 3 tours, num_tour=4 et indice maximum=2 
         indiceSituation= self.num_tour-2
@@ -129,16 +134,103 @@ class IAExpExpV1 :
         #  via une preuve "par damier" en utilisant la récursivité.
         scorePrecedant=0
         if(self.numero==0):
-            #self.miseAJourEtat(self.dernieresSituations[indiceSituation],score)
+            self.miseAJourEtatTotale(self.dernieresSituations[indiceSituation],score)
             scorePrecedant=score
         else:
-            #self.miseAJourEtat(self.dernieresSituations[indiceSituation],-score)
+            self.miseAJourEtatTotale(self.dernieresSituations[indiceSituation],-score)
             scorePrecedant=-score
         
         while indiceSituation >0 :
             indiceSituation -=1 
-            # ancienneValeur = self.valeurDEtat(self.dernieresSituations[indiceSituation])
+            ancienneValeur = self.valeurDEtatTotale(self.dernieresSituations[indiceSituation])
             nouvelleValeur = ancienneValeur + self.learning_rate*(scorePrecedant-ancienneValeur)
-            #self.miseAJourEtat(self.dernieresSituations[indiceSituation],nouvelleValeur)
+            self.miseAJourEtatTotale(self.dernieresSituations[indiceSituation],nouvelleValeur)
             scorePrecedant= nouvelleValeur
                
+                
+            
+    def valeurDEtatTotale(self,situation):
+        ligneEtat = self.plateauVersLigneEnregistrement(situation)
+        valeur = self.valeurDEtat(ligneEtat)
+        return valeur
+    
+    def miseAJourEtatTotale(self,situation,valeur):
+        ligneEtat = self.plateauVersLigneEnregistrement(situation)
+        self.miseAJourEtat(ligneEtat,valeur)
+        
+            
+    def plateauVersLigneEnregistrement(self,situation):
+        taillePlateau = 8
+        valeurReturn = 0
+        for x in range(taillePlateau):
+            for y in range(taillePlateau):
+                val = situation[0][(x,y)]
+                if(val == -8):
+                    val = 3
+                valeurReturn = (valeurReturn+val)*4
+        (valX,valY)=situation[1][0]
+        valeurReturn = (valeurReturn+valX)*taillePlateau
+        valeurReturn = (valeurReturn+valY)*taillePlateau
+        (valX,valY)=situation[1][1]
+        valeurReturn = (valeurReturn+valX)*taillePlateau
+        valeurReturn = (valeurReturn+valY)*taillePlateau
+        return valeurReturn
+    
+    def ligneEnregistrementVersPlateau(self,ligneLue):
+        joueurs = dict()
+        plateau = dict()
+        taillePlateau = 8
+        valY = ligneLue%taillePlateau
+        ligneLue=(ligneLue-valY)/taillePlateau
+        valX = ligneLue%taillePlateau
+        ligneLue=(ligneLue-valX)/taillePlateau
+        joueurs[1]=(valX,valY)
+        valY = ligneLue%taillePlateau
+        ligneLue=(ligneLue-valY)/taillePlateau
+        valX = ligneLue%taillePlateau
+        ligneLue=(ligneLue-valX)/taillePlateau
+        joueurs[0]=(valX,valY)
+        x=taillePlateau-1
+        
+        while(x>=0):
+            y=taillePlateau-1
+            while(y>=0):
+                val = ligneLue%4
+                ligneLue=(ligneLue-val)/4
+                if(val==3):
+                    val=-8
+                plateau[(x,y)]=val
+                y-=1
+            x-=1
+        
+        return (plateau,joueurs)
+
+
+    def valeurDEtat(self,situation):
+        try :
+            if not path.isfile(self.nomFichier) :
+                return 0
+            else :
+                with open(self.nomFichier) as json_file :
+                    data = json.load(json_file)
+                return data[str(situation)]
+        except KeyError :
+            return 0
+            
+            
+    def miseAJourEtat(self,situation,valeur):
+        try :
+            if not path.isfile(self.nomFichier) :
+                with open (self.nomFichier,'w+'):
+                    data = { }
+            else :
+                with open(self.nomFichier) as json_file:
+                    data = json.load(json_file)
+                data[str(situation)] = valeur
+            with open(self.nomFichier, 'w') as outfile:
+                json.dump(data, outfile)
+        except EOFError :
+            print("erreur lors de la modification de l'etat")
+            
+        
+    

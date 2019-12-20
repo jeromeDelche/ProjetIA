@@ -7,7 +7,7 @@ C'est une toute première version du plateau pour pouvoir vérifier l'IA
 Celle-ci ne respecte pas les conventions mis en accord précédement
 
 """
-#  import IAExpExpV1
+#import IAExpExpV1
 
 """
 
@@ -249,8 +249,8 @@ class JeuEnBois :
     def __init__(self,longeurPlateau):
         self.environnement=PlateauCarton(longeurPlateau)
         self.joueurs = dict()
-        self.joueurs[0] =IARandom(0)
-        self.joueurs[1] =IARandom(1)
+        self.joueurs[0] =IAExpExpV1(0)
+        self.joueurs[1] =IAExpExpV1(1)
         # self.numTour = 1
         
     @decoTemps
@@ -274,6 +274,30 @@ class JeuEnBois :
         self.environnement.dessinePlateau()
         score0,score1 = self.environnement.obtenir_score()
         print( str(score0)+" et "+str(score1))
+        
+        
+    def debutPartieEntrainement(self):
+        self.environnement.nettoyePlateau()
+        numDemiTour=0
+        numJoueurActuel =0
+        while (not self.environnement.jeuFini() ):
+            # print("Au tour du joueur ",numJoueurActuel)
+            deplacement = self.joueurs[numJoueurActuel].joueEntrainement(self.environnement)
+            while( not self.environnement.deplacementValide(deplacement,numJoueurActuel)):
+                #Plus tard : envoyer une exception !
+                print("Ce mouvement est incorrect : veuillez en choisir un autre")
+                deplacement = self.joueurs[numJoueurActuel].joueEntrainement(self.environnement)
+                
+            self.environnement.mouvement(deplacement,numJoueurActuel)
+            
+            numDemiTour +=1
+            numJoueurActuel = (numJoueurActuel+1)%2
+        print("Nombres de tours : " + str(numDemiTour-1))
+        self.environnement.dessinePlateau()
+        score0,score1 = self.environnement.obtenir_score()
+        print( str(score0)+" et "+str(score1))
+        self.joueurs[0].fin_partie(self.environnement)
+        self.joueurs[1].fin_partie(self.environnement)
             
         
 """        
@@ -287,7 +311,7 @@ if __name__ == "__main__" :
             
     testJeu()
 """
-#jeuTest = JeuEnCarton(8)
+#jeuTest = JeuEnBois(8)
 #jeuTest.debutPartie50()
 #jeuTest.debutPartieNormal()
         

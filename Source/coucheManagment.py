@@ -7,6 +7,8 @@ Created on Mon Dec  2 09:50:17 2019
 Pour passer de la couche utilisateur à la couche data access
 """
 
+
+
 def plateauVersLigneEnregistrement(situation):
     taillePlateau = 8
     valeurReturn = 0
@@ -52,3 +54,8 @@ def ligneEnregistrementVersPlateau(ligneLue):
         x-=1
     
     return (plateau,joueurs)
+
+class EtatEnregistre :
+    def __init__(self,entierTableau,score):
+        self.entierTableau = entierTableau
+        self.score = score
