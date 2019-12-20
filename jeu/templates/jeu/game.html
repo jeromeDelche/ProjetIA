@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+	<html>
+		 <head>
+			<style>
+				.flexContainer{ display: flex;
+								flex-direction: row;
+								justify-content: space-between;
+								margin:10px;
+								align-items: center;}
+				#plateau{	border-collapse: collapse; 
+							text-align: center ;
+							margin: 0 auto;
+							margin-top:10px;
+							padding: 10px;}
+				td { width: 75px; height: 75px; border: 2px solid black; background-color: white;}
+				td.player1 { background-color : brown ; }
+				td.player0 { background-color : cornflowerBlue ; }
+				td#player1 {  border: 8px solid red; }
+				td#player0 {  border: 8px solid blue; }
+				#thead{ border: 4px solid black;
+						background-color: LightGrey;}
+				.blue{color : cornflowerBlue ;}
+				.red{color : brown ;}
+				#score{ font-size: xx-large; }
+				.flexContainer p {margin:0px;}
+			</style>
+		 	<meta charset="UTF-8"/>
+		 </head>
+	 <body>
+	 	<table id = "plateau">
+
+	 		<thead id = "thead">
+	 			<tr>
+	 				<th colspan="{{size}}">
+	 					<div class="flexContainer">
+	 						<p id = "etat">
+	 							{% if isFinish %}
+	 								Partie terminée ! <a href ="{% url "gameWithArgument" 4 %}">Recommencer une partie</a>
+	 							{% else %}
+	 								Demi-tour n° : {{nbDemiTour}}
+	 							{% endif %}
+	 							
+	 						</p>
+
+	 						<p id="score">
+	 							<span class = blue>{{score.0}}</span> - <span class = red>{{score.1}}</span>
+	 						</p>
+
+	 						<p id="deconnecter">
+	 							<a href ="{% url "logout" %}">se déconnecter</a>
+	 						</p>
+	 					</div>
+	 				</th>
+	 			</tr>
+	 		</thead>
+
+	 		<tbody>
+				<script type="text/javascript">
+
+					let JSLocations = {};
+
+					for (let row = 0 ; row < {{size}} ; row++) {
+			 			let newRow = document.createElement("tr");
+
+			 			for(let column = 0 ; column < {{size}} ; column ++){
+			 				let newCase = document.createElement("td");
+			 				newRow.append(newCase);
+			 				JSLocations[row*{{size}} + column] = newCase;
+			 			}
+			 			document.getElementById("plateau").append(newRow);
+					}
+
+
+					{% for cle, val in state.items %}
+						{% if val == 0 or  val == 1 %}
+						JSLocations[{{cle.1}}*{{size}} + {{cle.0}}].setAttribute("class" , ({{val}} == 1 ? "player1" : "player0") );
+						{% endif %}
+			 		{% endfor %}
+
+			 		{% for cle, val in players.items %}
+						JSLocations[{{val.1}}*{{size}} + {{val.0}}].setAttribute("id" , ({{cle}} == 1 ? "player1" : "player0") );
+			 		{% endfor %}
+
+
+			 		document.addEventListener('keydown', keyPressed);
+
+					function keyPressed(e) {
+						let direction
+						switch(e.keyCode){
+							case (39) : window.location.href = "{% url "gameWithArgument" 0 %}";
+								break;
+							case (40) : window.location.href = "{% url "gameWithArgument" 1 %}";
+								break;
+							case (37) : window.location.href = "{% url "gameWithArgument" 2 %}";
+								break;
+							case (38) : window.location.href = "{% url "gameWithArgument" 3 %}";
+								break;
+						}
+					}
+
+					{% if  not autoRefreshNeeded %}
+						document.getElementById("etat").style.color = "green";
+					{% else %}
+						document.getElementById("etat").style.color = "red";
+						setTimeout(() => { window.location.href = "{% url "game" %}"; }, 250);
+					{% endif %}
+
+				</script>
+			</tbody>
+		</table>
+	 </body>
+</html>

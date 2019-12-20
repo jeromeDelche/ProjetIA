@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+	<html>
+		 <head>
+		 	<style>
+				#connexionForm{ width: 350px;
+								border: 2px solid black; 
+								text-align: center ;
+							 	margin: 0 auto;
+								margin-top:150px;
+								padding: 10px;
+								background-color: LightGrey;}
+				h1 { text-decoration: underline;  }
+			</style>
+		 	<meta charset="UTF-8"/>
+		 </head>
+	 <body>
+	 	<div id = "connexionForm">
+			<h1>Ecran de connexion</h1>
+
+	 		{% if user.is_authenticated %}
+	 			<p>Vous êtes déjà connecter ! <a href ="logout">se déconnecter</a></p>
+	 		{% else %}
+				<form action="{% url "connexion" %}" method="post">
+				    {% csrf_token %}		    
+				    {{ form.as_p }}
+					<input type="submit" value="Valider" />
+				</form>
+				<p>Pas encore inscrit ? <a href = "./register">Creer un compte !</a> </p>
+			{% endif %}
+		</div>
+	 </body>
+</html>

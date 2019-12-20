@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+	<html>
+		 <head>
+		 	<style>
+				#registerForm{  width: 350px;
+								border: 2px solid black; 
+								text-align: center ;
+							 	margin: 0 auto;
+								margin-top:150px;
+								padding: 10px;
+								background-color: LightGrey;}
+				h1 { text-decoration: underline;  }
+			</style>
+		 	<meta charset="UTF-8"/>
+		 </head>
+	 <body>
+	 	<div id = "registerForm">
+			<h1>Créer un compte</h1>
+
+	 		{% if user.is_authenticated %}
+	 			<p>Vous êtes déjà connecter ! <a href ="logout">se déconnecter</a></p>
+	 		{% else %}
+				<form action="{% url "register" %}" method="post">
+				    {% csrf_token %}
+				    {{ form.as_p }}
+				    <input type="submit" value="Valider" />
+				</form>
+				<p><a href ="{% url "connexion" %}">se connecter</a></p>
+			{% endif %}
+		</div>
+	 </body>
+</html>
