@@ -199,6 +199,18 @@ class PlateauCarton :
         caseDestination = self.joueurs[numero][0]+self.listeMouvement[deplacement][0] , self.joueurs[numero][1]+self.listeMouvement[deplacement][1]  
         return caseDestination in list(filter(lambda cellule : not(self.appartient(cellule,(numero+1)%2)),self.casesVoisines(self.joueurs[numero])))
 
+     def getEnvironement(self) :
+        return self.tableau
+
+    def getJoueurs(self) :
+        return self.joueurs
+
+    def setEnvironement(self, tab) :
+        self.tableau = tab
+
+    def setJoueurs(self, jou) :
+        self.joueurs = jou    
+
     
 class JeuEnCarton :
     def __init__(self,longeurPlateau):
